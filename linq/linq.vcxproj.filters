@@ -30,7 +30,7 @@
     <ClInclude Include="include\linq\ranges\increment_range.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="include\linq\ranges\intersects_range.hpp">
+    <ClInclude Include="include\linq\ranges\intersect_with_range.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="include\linq\ranges\iterator_range.hpp">

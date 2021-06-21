@@ -16,7 +16,7 @@
 #include <linq/ranges/concat_range.hpp>
 #include <linq/ranges/where_range.hpp>
 #include <linq/ranges/select_range.hpp>
-#include <linq/ranges/intersects_range.hpp>
+#include <linq/ranges/intersect_with_range.hpp>
 #include <linq/ranges/distinct_range.hpp>
 #include <linq/ranges/skip_range.hpp>
 #include <linq/ranges/take_range.hpp>
@@ -137,10 +137,10 @@ namespace linq
 		/// <param name="collection">an enumerable holding the range to compare against</param>
 		/// <returns>an enumerable holding values which both ranges contain</returns>
 		template<range_concept TIntersectsRange>
-		constexpr enumerable<intersects_range<range_type, TIntersectsRange>> intersects(const enumerable<TIntersectsRange> & collection) const
+		constexpr enumerable<intersect_with_range<range_type, TIntersectsRange>> intersect_with(const enumerable<TIntersectsRange> & collection) const
 		{
-			return enumerable<intersects_range<range_type, TIntersectsRange>>(
-				intersects_range<range_type, TIntersectsRange>(this->range, collection.to_range())
+			return enumerable<intersect_with_range<range_type, TIntersectsRange>>(
+				intersect_with_range<range_type, TIntersectsRange>(this->range, collection.to_range())
 			);
 		}
 
@@ -719,7 +719,7 @@ namespace linq
 			);
 		}
 
-		template<typename TGroupSelector>
+		template<typename TGroupSelector, typename = std::enable_if_t<std::is_invocable_v<TGroupSelector, value_type>>>
 		constexpr lookup_table<range_type, TGroupSelector> to_lookup(const TGroupSelector & selector) const
 		{
 			return lookup_table<range_type, TGroupSelector>(
@@ -1611,6 +1611,8 @@ namespace linq
 	{
 	public:
 
+		static_assert(std::is_invocable_v<TGroupSelector, typename TRange::value_type>, "TGroupSelector (lookup_table) has an invalid format!");
+
 		using range_type          = TRangeType;
 		using group_selector_type = TGroupSelectorType;
 		using list_type           = TListType;
@@ -1672,7 +1674,9 @@ namespace linq
 	class lookup_table : public enumerable<outer_lookup_range<TRange, TGroupSelector>>
 	{
 	public:
-				
+
+		static_assert(std::is_invocable_v<TGroupSelector, typename TRange::value_type>, "TGroupSelector (lookup_table) has an invalid format!");
+		
 		using underlying_range_type = std::remove_cvref_t<TRange>;
 		using group_selector_type   = std::remove_cvref_t<TGroupSelector>;
 		using element_type          = typename underlying_range_type::value_type;

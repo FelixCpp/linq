@@ -26,7 +26,7 @@ namespace linq
 	public:
 
 		/// <summary>
-		/// Creates an intersects_range
+		/// Creates an distinct_range
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
 		constexpr explicit distinct_range(const range_type & range)

@@ -8,7 +8,7 @@ namespace linq
 {
 
 	template<range_concept TLhsRange, range_concept TRhsRange>
-	class intersects_range
+	class intersect_with_range
 	{
 	public:
 
@@ -27,11 +27,11 @@ namespace linq
 	public:
 
 		/// <summary>
-		/// Creates an intersects_range
+		/// Creates an intersect_with_range
 		/// </summary>
 		/// <param name="lhs_range">the left-hand-side range</param>
 		/// <param name="rhs_range">the right-hand-side range</param>
-		constexpr explicit intersects_range(
+		constexpr explicit intersect_with_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range
 		) : lhs_range(lhs_range), rhs_range(rhs_range), values(), iterator()

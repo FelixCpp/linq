@@ -153,7 +153,7 @@
     <ClInclude Include="include\linq\ranges\empty_range.hpp" />
     <ClInclude Include="include\linq\ranges\except_range.hpp" />
     <ClInclude Include="include\linq\ranges\increment_range.hpp" />
-    <ClInclude Include="include\linq\ranges\intersects_range.hpp" />
+    <ClInclude Include="include\linq\ranges\intersect_with_range.hpp" />
     <ClInclude Include="include\linq\ranges\iterator_range.hpp" />
     <ClInclude Include="include\linq\ranges\join_range.hpp" />
     <ClInclude Include="include\linq\ranges\orderby_range.hpp" />
