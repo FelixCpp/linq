@@ -15,11 +15,9 @@ namespace linq
 		/// <summary>
 		/// Type definitions
 		/// </summary>
-		using range_type = std::remove_cvref_t<TRange>;
-
-		using value_type  = typename range_type::value_type;
-		using return_type = typename range_type::return_type;
-
+		using range_type        = std::remove_cvref_t<TRange>;
+		using value_type        = std::remove_cvref_t<typename range_type::value_type>;
+		using return_type       = const value_type &;
 		using set_type          = std::set<value_type>;
 		using set_iterator_type = typename set_type::const_iterator;
 
@@ -29,7 +27,7 @@ namespace linq
 		/// Creates an distinct_range
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
-		constexpr explicit distinct_range(const range_type & range)
+		_NODISCARD_CTOR explicit distinct_range(const range_type & range)
 			: range(range), values(), iterator()
 		{
 		}
@@ -37,7 +35,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
@@ -46,7 +44,7 @@ namespace linq
 		/// Increments the iterator to get the next value as
 		/// active one
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->range.move_next())
 			{

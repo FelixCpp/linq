@@ -30,8 +30,8 @@ namespace linq
 		using lhs_range_type = std::remove_cvref_t<TLhsRange>;
 		using rhs_range_type = std::remove_cvref_t<TRhsRange>;
 
-		using value_type  = typename lhs_range_type::value_type;
-		using return_type = typename lhs_range_type::return_type;
+		using value_type  = std::remove_cvref_t<typename lhs_range_type::value_type>;
+		using return_type = value_type;
 
 	public:
 
@@ -40,7 +40,7 @@ namespace linq
 		/// </summary>
 		/// <param name="lhs_range">the left-hand-side range</param>
 		/// <param name="rhs_range">the right-hand-side to concatenate to the end of the left-hand-side range</param>
-		constexpr explicit concat_range(
+		_NODISCARD_CTOR explicit concat_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range
 		) : lhs_range(lhs_range), rhs_range(rhs_range), state(state_initial)
@@ -51,7 +51,7 @@ namespace linq
 		/// Determines the current value through the current state
 		/// and returns it
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			switch (this->state)
 			{
@@ -63,7 +63,7 @@ namespace linq
 			}
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			switch (this->state)
 			{

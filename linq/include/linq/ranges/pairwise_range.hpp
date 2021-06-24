@@ -28,7 +28,7 @@ namespace linq
 		/// Constructs a pairwise_range
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
-		constexpr explicit pairwise_range(const range_type & range)
+		_NODISCARD_CTOR explicit pairwise_range(const range_type & range)
 			: range(range), previous(std::nullopt), current(std::nullopt)
 		{
 		}
@@ -36,7 +36,7 @@ namespace linq
 		/// <summary>
 		/// Returns a pair of the current and the next value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return std::make_pair(this->previous.value(), this->current.value());
 		}
@@ -44,7 +44,7 @@ namespace linq
 		/// <summary>
 		/// Retrieves the new values
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(!this->previous.has_value())
 			{

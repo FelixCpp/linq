@@ -27,7 +27,7 @@ namespace linq
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
 		/// <param name="count">the number of elements to take starting from the first element</param>
-		constexpr explicit take_range(const range_type & range, const size_type count)
+		_NODISCARD_CTOR explicit take_range(const range_type & range, const size_type count)
 			: range(range), remaining(count)
 		{
 		}
@@ -35,7 +35,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->range.get_value();
 		}
@@ -43,7 +43,7 @@ namespace linq
 		/// <summary>
 		/// Moves to the next element
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->remaining > 0 && this->range.move_next())
 			{

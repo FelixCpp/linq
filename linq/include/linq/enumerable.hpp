@@ -39,7 +39,7 @@ namespace linq
 
 	template<range_concept TRange, typename TGroupSelector>
 	class lookup_table;
-
+		
 	template<range_concept TRange>
 	class enumerable
 	{
@@ -48,12 +48,13 @@ namespace linq
 		/// <summary>
 		/// type definitions
 		/// </summary>
-		using range_type = TRange;
-		using value_type = typename TRange::value_type;
-
+		using range_type  = TRange;
+		using value_type  = typename TRange::value_type;
+		using return_type = typename TRange::return_type;
+	
 	private:
 
-		template<typename TLambda, typename TResult>    inline static constexpr bool is_lambda    = std::is_same_v<std::invoke_result_t<TLambda, value_type>, TResult>;
+		template<typename TLambda, typename TResult>    inline static constexpr bool is_lambda    = std::is_invocable_v<TLambda, value_type> && std::is_same_v<std::invoke_result_t<TLambda, value_type>, TResult>;
 		template<typename TPredicate>                   inline static constexpr bool is_predicate = is_lambda<TPredicate, bool>;
 		template<typename TAction>                      inline static constexpr bool is_action    = is_lambda<TAction, void>;
 		
@@ -64,7 +65,7 @@ namespace linq
 		/// a given range
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
-		constexpr explicit enumerable(const range_type & range)
+		_NODISCARD_CTOR explicit enumerable(const range_type & range)
 			: range(range)
 		{
 		}
@@ -72,7 +73,7 @@ namespace linq
 		/// <summary>
 		/// Returns the range of the enumerable
 		/// </summary>
-		const range_type & to_range() const
+		_NODISCARD const range_type & to_range() const
 		{
 			return this->range;
 		}
@@ -83,7 +84,7 @@ namespace linq
 		/// </summary>
 		/// <param name="collection">an enumerable holding each value to ignore</param>
 		template<range_concept TExceptRange>
-		constexpr auto except(const enumerable<TExceptRange> & collection) const
+		_NODISCARD enumerable<except_range<range_type, TExceptRange>> except(const enumerable<TExceptRange> & collection) const
 		{
 			return enumerable<except_range<range_type, TExceptRange>>(
 				except_range<range_type, TExceptRange>(this->range, collection.to_range())
@@ -96,7 +97,7 @@ namespace linq
 		/// <param name="collection">an enumerable holding the range to concatenate behind the existing range</param>
 		/// <returns>an enumerable holding values from the previous and the concatenated ranges</returns>
 		template<range_concept TConcatRange>
-		constexpr auto concat(const enumerable<TConcatRange> & collection) const
+		_NODISCARD enumerable<concat_range<range_type, TConcatRange>> concat(const enumerable<TConcatRange> & collection) const
 		{
 			return enumerable<concat_range<range_type, TConcatRange>>(
 				concat_range<range_type, TConcatRange>(this->range, collection.to_range())
@@ -109,7 +110,7 @@ namespace linq
 		/// </summary>
 		/// <param name="predicate">the predicate which checks if the value gets filtered or stays in the range</param>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr auto where(const TPredicate & predicate) const
+		_NODISCARD enumerable<where_range<range_type, TPredicate>> where(const TPredicate & predicate) const
 		{
 			return enumerable<where_range<range_type, TPredicate>>(
 				where_range<range_type, TPredicate>(this->range, predicate)
@@ -123,7 +124,7 @@ namespace linq
 		/// <typeparam name="TResult">the result type</typeparam>
 		/// <param name="transformation">the transformation for each value</param>
 		template<typename TLambda, typename TResult = std::invoke_result_t<TLambda, value_type>>
-		constexpr enumerable<select_range<range_type, TLambda>> select(const TLambda & transformation) const
+		_NODISCARD enumerable<select_range<range_type, TLambda>> select(const TLambda & transformation) const
 		{
 			return enumerable<select_range<range_type, TLambda>>(
 				select_range<range_type, TLambda>(this->range, transformation)
@@ -137,7 +138,7 @@ namespace linq
 		/// <param name="collection">an enumerable holding the range to compare against</param>
 		/// <returns>an enumerable holding values which both ranges contain</returns>
 		template<range_concept TIntersectsRange>
-		constexpr enumerable<intersect_with_range<range_type, TIntersectsRange>> intersect_with(const enumerable<TIntersectsRange> & collection) const
+		_NODISCARD enumerable<intersect_with_range<range_type, TIntersectsRange>> intersect_with(const enumerable<TIntersectsRange> & collection) const
 		{
 			return enumerable<intersect_with_range<range_type, TIntersectsRange>>(
 				intersect_with_range<range_type, TIntersectsRange>(this->range, collection.to_range())
@@ -147,7 +148,7 @@ namespace linq
 		/// <summary>
 		/// Removes all duplicates from the range
 		/// </summary>
-		constexpr enumerable<distinct_range<range_type>> distinct() const
+		_NODISCARD enumerable<distinct_range<range_type>> distinct() const
 		{
 			return enumerable<distinct_range<range_type>>(
 				distinct_range<range_type>(this->range)
@@ -159,7 +160,7 @@ namespace linq
 		/// of the range
 		/// </summary>
 		/// <param name="count">the number of elements to skip</param>
-		constexpr enumerable<skip_range<range_type>> skip(size_t count) const
+		_NODISCARD enumerable<skip_range<range_type>> skip(size_t count) const
 		{
 			return enumerable<skip_range<range_type>>(
 				skip_range<range_type>(this->range, count)
@@ -171,7 +172,7 @@ namespace linq
 		/// of the range
 		/// </summary>
 		/// <param name="count">the number of elements to take</param>
-		constexpr enumerable<take_range<range_type>> take(size_t count) const
+		_NODISCARD enumerable<take_range<range_type>> take(size_t count) const
 		{
 			return enumerable<take_range<range_type>>(
 				take_range<range_type>(this->range, count)
@@ -184,7 +185,7 @@ namespace linq
 		/// </summary>
 		/// <param name="predicate">the predicate to check against each value</param>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr enumerable<skip_while_range<range_type, TPredicate>> skip_while(const TPredicate & predicate) const
+		_NODISCARD enumerable<skip_while_range<range_type, TPredicate>> skip_while(const TPredicate & predicate) const
 		{
 			return enumerable<skip_while_range<range_type, TPredicate>>(
 				skip_while_range<range_type, TPredicate>(this->range, predicate)
@@ -197,7 +198,7 @@ namespace linq
 		/// </summary>
 		/// <param name="predicate">the predicate to check against each value</param>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr enumerable<take_while_range<range_type, TPredicate>> take_while(const TPredicate & predicate) const
+		_NODISCARD enumerable<take_while_range<range_type, TPredicate>> take_while(const TPredicate & predicate) const
 		{
 			return enumerable<take_while_range<range_type, TPredicate>>(
 				take_while_range<range_type, TPredicate>(this->range, predicate)
@@ -207,7 +208,7 @@ namespace linq
 		/// <summary>
 		/// Reverses the range
 		/// </summary>
-		constexpr enumerable<reverse_range<range_type>> reverse()
+		_NODISCARD enumerable<reverse_range<range_type>> reverse()
 		{
 			return enumerable<reverse_range<range_type>>(
 				reverse_range<range_type>(this->range)
@@ -217,17 +218,36 @@ namespace linq
 		/// <summary>
 		/// creates a list based on the values of the range
 		/// </summary>
-		constexpr std::list<value_type> to_list() const
+		_NODISCARD std::list<value_type> to_list() const
 		{
-			return to_list_impl(this->range);
+			range_type copy = this->range;
+			
+			std::list<value_type> values;
+
+			while (copy.move_next())
+			{
+				values.push_back(copy.get_value());
+			}
+
+			return values;
 		}
 
 		/// <summary>
 		/// creates a vector based on the values of the range
 		/// </summary>
-		constexpr std::vector<value_type> to_vector(size_t capacity = 16) const
+		_NODISCARD std::vector<value_type> to_vector(size_t capacity = 16) const
 		{
-			return to_vector_impl(this->range, capacity);
+			range_type copy = this->range;
+
+			std::vector<value_type> values;
+			values.reserve(capacity);
+			
+			while (copy.move_next())
+			{
+				values.push_back(copy.get_value());
+			}
+
+			return values;
 		}
 
 		/// <summary>
@@ -236,9 +256,14 @@ namespace linq
 		/// </summary>
 		/// <param name="action">the action to perform for each value</param>
 		template<typename TAction, typename = std::enable_if_t<is_action<TAction>>>
-		constexpr void for_each(const TAction & action) const
+		_NODISCARD void for_each(const TAction & action) const
 		{
-			for_each_impl(this->range, action);
+			range_type copy = this->range;
+
+			while (copy.move_next())
+			{
+				action(copy.get_value());
+			}
 		}
 
 		/// <summary>
@@ -247,18 +272,38 @@ namespace linq
 		/// </summary>
 		/// <param name="action">the action to perform for each value</param>
 		template<typename TAction, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAction, value_type, size_t>, void>>>
-		constexpr void indexed_for_each(const TAction & action) const
+		_NODISCARD void indexed_for_each(const TAction & action) const
 		{
-			indexed_for_each_impl(this->range, action);
+			range_type copy = this->range;
+			
+			for(size_t index = 0; copy.move_next(); index++)
+			{
+				action(copy.get_value(), index);
+			}
 		}
 
 		/// <summary>
 		/// Determines the lowest value of
 		/// the range
 		/// </summary>
-		constexpr value_type min() const
+		_NODISCARD return_type min() const
 		{
-			return min_impl(this->range);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto record = copy.get_value();
+
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (value < record)
+					record = value;
+			}
+
+			return record;
 		}
 
 		/// <summary>
@@ -267,18 +312,48 @@ namespace linq
 		/// </summary>
 		/// <param name="transformation">a transformation function for each element</param>
 		template<typename TLambda, typename TResult = std::invoke_result_t<TLambda, value_type>>
-		constexpr TResult min(const TLambda & transformation) const
+		_NODISCARD TResult min(const TLambda & transformation) const
 		{
-			return min_impl(this->range, transformation);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto record = transformation(copy.get_value());
+
+			while (copy.move_next())
+			{
+				const auto value = transformation(copy.get_value());
+
+				if (value < record)
+					record = value;
+			}
+
+			return record;
 		}
 
 		/// <summary>
 		/// Determines the highest value of
 		/// the range
 		/// </summary>
-		constexpr value_type max() const
+		_NODISCARD return_type max() const
 		{
-			return max_impl(this->range);
+			range_type copy = this->range;
+
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto record = copy.get_value();
+
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (value > record)
+					record = value;
+			}
+
+			return record;
 		}
 
 		/// <summary>
@@ -287,18 +362,40 @@ namespace linq
 		/// </summary>
 		/// <param name="transformation">a transformation function for each element</param>
 		template<typename TLambda, typename TResult = std::invoke_result_t<TLambda, value_type>>
-		constexpr TResult max(const TLambda & transformation) const
+		_NODISCARD TResult max(const TLambda & transformation) const
 		{
-			return max_impl(this->range, transformation);
+			range_type copy = this->range;
+
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto record = transformation(copy.get_value());
+
+			while (copy.move_next())
+			{
+				const auto value = transformation(copy.get_value());
+
+				if (value > record)
+					record = value;
+			}
+
+			return record;
 		}
 
 		/// <summary>
 		/// Determines the number of elements held by the range
 		/// </summary>
 		/// <returns>the number of elements</returns>
-		constexpr size_t count() const
+		_NODISCARD size_t count() const
 		{
-			return count_impl(this->range);
+			range_type copy = this->range;
+			
+			size_t count = 0;
+
+			while (copy.move_next())
+				++count;
+
+			return count;
 		}
 
 		/// <summary>
@@ -308,9 +405,17 @@ namespace linq
 		/// <param name="predicate">a predicate for each element deciding whether to count that element or not</param>
 		/// <returns>the number of elements satisfying the predicate</returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr size_t count_if(const TPredicate & predicate) const
+		_NODISCARD size_t count(const TPredicate & predicate) const
 		{
-			return count_if_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			size_t count = 0;
+
+			while (copy.move_next())
+				if (predicate(copy.get_value()))
+					++count;
+
+			return count;
 		}
 
 		/// <summary>
@@ -318,9 +423,11 @@ namespace linq
 		/// is empty
 		/// </summary>
 		/// <returns>True if the range has at least one element to process</returns>
-		constexpr bool any() const
+		_NODISCARD bool any() const
 		{
-			return any_impl(this->range);
+			range_type copy = this->range;
+
+			return copy.move_next();
 		}
 
 		/// <summary>
@@ -330,9 +437,17 @@ namespace linq
 		/// <param name="predicate">the predicate which needs to be satisfied by each range-value</param>
 		/// <returns></returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr bool any(const TPredicate & predicate) const
+		_NODISCARD bool any(const TPredicate & predicate) const
 		{
-			return any_if_impl(this->range, predicate);
+			range_type copy = this->range;
+
+			while (copy.move_next())
+			{
+				if (predicate(copy.get_value()))
+					return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -342,9 +457,17 @@ namespace linq
 		/// <param name="predicate">the predicate which needs to be satisfied by each range-value</param>
 		/// <returns></returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr bool all(const TPredicate & predicate) const
+		_NODISCARD bool all(const TPredicate & predicate) const
 		{
-			return all_impl(this->range, predicate);
+			range_type copy = this->range;
+
+			while (copy.move_next())
+			{
+				if (!predicate(copy.get_value()))
+					return false;
+			}
+
+			return true;
 		}
 
 		/// <summary>
@@ -353,9 +476,17 @@ namespace linq
 		/// </summary>
 		/// <param name="value">the value to search for</param>
 		/// <returns>True if the value was found</returns>
-		constexpr bool contains(const value_type & value) const
+		_NODISCARD bool contains(const value_type & value) const
 		{
-			return contains_impl(this->range, value);
+			range_type copy = this->range;
+			
+			while (copy.move_next())
+			{
+				if (copy.get_value() == value)
+					return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -364,18 +495,41 @@ namespace linq
 		/// <param name="predicate">the predicate to satisfy</param>
 		/// <returns>True if the predicate returned once</returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr bool contains_if(const TPredicate & predicate) const
+		_NODISCARD bool contains_if(const TPredicate & predicate) const
 		{
-			return contains_if_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			while (copy.move_next())
+			{
+				if (predicate(copy.get_value()))
+					return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
 		/// Determines the average of the range
 		/// </summary>
 		/// <returns>the average of the range</returns>
-		constexpr value_type avg() const
+		_NODISCARD value_type avg() const
 		{
-			return avg_impl(this->range);
+			range_type copy = this->range;
+			
+			// we don't have any elements to work with
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto value = copy.get_value();
+			size_t count = 1;
+
+			while (copy.move_next())
+			{
+				value += copy.get_value();
+				++count;
+			}
+
+			return value / count;
 		}
 
 		/// <summary>
@@ -384,18 +538,46 @@ namespace linq
 		/// <param name="transformation">a function to transform the values of the range</param>
 		/// <returns>the average of the range</returns>
 		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		constexpr TResult avg(const TTransformation & transformation) const
+		_NODISCARD TResult avg(const TTransformation & transformation) const
 		{
-			return avg_impl(this->range, transformation);
+			range_type copy = this->range;
+			
+			// we don't have any elements to work with
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto value = transformation(copy.get_value());
+			size_t count = 1;
+
+			while (copy.move_next())
+			{
+				value += transformation(copy.get_value());
+				++count;
+			}
+
+			return value / count;
 		}
 
 		/// <summary>
 		/// Determines the sum of the range
 		/// </summary>
 		/// <returns>the sum of the range</returns>
-		constexpr value_type sum() const
+		_NODISCARD value_type sum() const
 		{
-			return sum_impl(this->range);
+			range_type copy = this->range;
+			
+			// we don't have any elements to work with
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto value = copy.get_value();
+
+			while (copy.move_next())
+			{
+				value += copy.get_value();
+			}
+
+			return value;
 		}
 
 		/// <summary>
@@ -404,9 +586,22 @@ namespace linq
 		/// <param name="transformation">a function to transform the values of the range</param>
 		/// <returns>the sum of the range</returns>
 		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		constexpr TResult sum(const TTransformation & transformation) const
+		_NODISCARD TResult sum(const TTransformation & transformation) const
 		{
-			return sum_impl(this->range, transformation);
+			range_type copy = this->range;
+			
+			// we don't have any elements to work with
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto value = transformation(copy.get_value());
+
+			while (copy.move_next())
+			{
+				value += transformation(copy.get_value());
+			}
+
+			return value;
 		}
 
 		/// <summary>
@@ -417,9 +612,18 @@ namespace linq
 		/// <param name="seed">the starting value of the aggregation</param>
 		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
 		template<typename TAccumulate, typename TAccumulator, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
-		constexpr TAccumulate aggregate(const TAccumulate & seed, const TAccumulator & accumulator) const
+		_NODISCARD TAccumulate aggregate(const TAccumulate & seed, const TAccumulator & accumulator) const
 		{
-			return aggregate_impl(this->range, seed, accumulator);
+			range_type copy = this->range;
+			
+			auto value = seed;
+
+			while (copy.move_next())
+			{
+				value = accumulator(value, copy.get_value());
+			}
+
+			return value;
 		}
 
 		/// <summary>
@@ -434,9 +638,9 @@ namespace linq
 		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
 		/// <param name="transformation">the transformation for the result</param>
 		template<typename TAccumulate, typename TAccumulator, typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, TAccumulate>, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
-		constexpr TResult aggregate(const TAccumulate & seed, const TAccumulator & accumulator, const TTransformation & transformation) const
+		_NODISCARD TResult aggregate(const TAccumulate & seed, const TAccumulator & accumulator, const TTransformation & transformation) const
 		{
-			return aggregate_impl(this->range, seed, accumulator, transformation);
+			return transformation(this->aggregate(seed, accumulator));
 		}
 
 		/// <summary>
@@ -449,9 +653,22 @@ namespace linq
 		/// </summary>
 		/// <param name="index">the index of the element</param>
 		/// <returns>the value stored behind that index</returns>
-		constexpr value_type element_at(const size_t index) const
+		_NODISCARD return_type element_at(const size_t index) const
 		{
-			return element_at_impl(this->range, index);
+			range_type copy = this->range;
+			
+			size_t current = 0;
+			while (current <= index)
+			{
+				if (!copy.move_next())
+				{
+					throw index_out_of_bounds_exception();
+				}
+
+				current++;
+			}
+
+			return copy.get_value();
 		}
 
 		/// <summary>
@@ -463,9 +680,22 @@ namespace linq
 		/// </summary>
 		/// <param name="index">the index of the element</param>
 		/// <returns>the value stored behind that index</returns>
-		constexpr value_type element_at_default(const size_t index) const
+		_NODISCARD value_type element_at_default(const size_t index) const
 		{
-			return element_at_or_default_impl(this->range, index);
+			range_type copy = this->range;
+			
+			size_t current = 0;
+			while (current <= index)
+			{
+				if (!copy.move_next())
+				{
+					return value_type{};
+				}
+
+				current++;
+			}
+
+			return copy.get_value();
 		}
 
 		/// <summary>
@@ -474,18 +704,29 @@ namespace linq
 		/// If the range is empty, a sequence_empty_exception will
 		/// be thrown
 		/// </summary>
-		constexpr value_type first() const
+		_NODISCARD return_type first() const
 		{
-			return first_impl(this->range);
+			range_type copy = this->range;
+			
+			if (copy.move_next())
+				return copy.get_value();
+
+			throw sequence_empty_exception();
 		}
 
 		/// <summary>
 		/// Determines the first element of the range.
 		/// If the range is empty, the default will be returned
 		/// </summary>
-		constexpr value_type first_or_default() const
+		template<typename = std::enable_if_t<std::is_default_constructible_v<value_type>>>
+		_NODISCARD value_type first_or_default() const
 		{
-			return first_or_default_impl(this->range);
+			range_type copy = this->range;
+			
+			if (copy.move_next())
+				return copy.get_value();
+
+			return value_type{};
 		}
 
 		/// <summary>
@@ -496,9 +737,19 @@ namespace linq
 		/// <param name="predicate">the predicate to satisfy</param>
 		/// <returns>the first element in the range which satisfies the predicate</returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr value_type first(const TPredicate & predicate) const
+		_NODISCARD return_type first(const TPredicate & predicate) const
 		{
-			return first_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (predicate(value))
+					return value;
+			}
+
+			throw sequence_empty_exception();
 		}
 
 		/// <summary>
@@ -508,10 +759,20 @@ namespace linq
 		/// </summary>
 		/// <param name="predicate">the predicate to satisfy</param>
 		/// <returns>the first element in the range which satisfies the predicate</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr value_type first_or_default(const TPredicate & predicate) const
+		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate> && std::is_default_constructible_v<value_type>>>
+		_NODISCARD value_type first_or_default(const TPredicate & predicate) const
 		{
-			return first_or_default_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (predicate(value))
+					return value;
+			}
+
+			return value_type{};
 		}
 		
 		/// <summary>
@@ -520,18 +781,43 @@ namespace linq
 		/// If the range is empty, a sequence_empty_exception will
 		/// be thrown
 		/// </summary>
-		constexpr value_type last() const
+		_NODISCARD return_type last() const
 		{
-			return last_impl(this->range);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto result = copy.get_value();
+
+			while (copy.move_next())
+			{
+				result = copy.get_value();
+			}
+
+			return result;
 		}
 
 		/// <summary>
 		/// Determines the last element of the range.
 		/// If the range is empty, the default will be returned
 		/// </summary>
-		constexpr value_type last_or_default() const
+		template<typename = std::enable_if_t<std::is_default_constructible_v<value_type>>>
+		_NODISCARD value_type last_or_default() const
 		{
-			return last_or_default_impl(this->range);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				return value_type{};
+
+			auto result = copy.get_value();
+
+			while (copy.move_next())
+			{
+				result = copy.get_value();
+			}
+
+			return result;
 		}
 
 		/// <summary>
@@ -542,9 +828,34 @@ namespace linq
 		/// <param name="predicate">the predicate to satisfy</param>
 		/// <returns>the last element in the range which satisfies the predicate</returns>
 		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr value_type last(const TPredicate & predicate) const
+		_NODISCARD return_type last(const TPredicate & predicate) const
 		{
-			return last_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				throw sequence_empty_exception();
+
+			auto result = copy.get_value();
+			bool updated = false;
+
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (predicate(value))
+				{
+					result = value;
+					updated = true;
+				}
+			}
+
+			if (updated)
+				return result;
+
+			if (predicate(result))
+				return result;
+
+			throw sequence_empty_exception();
 		}
 
 		/// <summary>
@@ -554,21 +865,45 @@ namespace linq
 		/// </summary>
 		/// <param name="predicate">the predicate to satisfy</param>
 		/// <returns>the last element in the range which satisfies the predicate</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr value_type last_or_default(const TPredicate & predicate) const
+		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate> && std::is_default_constructible_v<value_type>>>
+		_NODISCARD value_type last_or_default(const TPredicate & predicate) const
 		{
-			return last_or_default_impl(this->range, predicate);
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				return value_type{};
+
+			auto result = copy.get_value();
+			bool updated = false;
+
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+
+				if (predicate(value))
+				{
+					result = value;
+					updated = true;
+				}
+			}
+
+			if (updated)
+				return result;
+
+			if (predicate(result))
+				return result;
+
+			return value_type{};
 		}
 
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<orderby_range<range_type, TSelector>> orderby(const TSelector & selector) const
+		_NODISCARD enumerable<orderby_range<range_type, TSelector>> orderby(const TSelector & selector) const
 		{
 			return orderby_ascending(selector);
 		}
 
-
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<orderby_range<range_type, TSelector>> orderby_ascending(const TSelector & selector) const
+		_NODISCARD enumerable<orderby_range<range_type, TSelector>> orderby_ascending(const TSelector & selector) const
 		{
 			return enumerable<orderby_range<range_type, TSelector>>(
 				orderby_range<range_type, TSelector>(this->range, selector, true)
@@ -576,7 +911,7 @@ namespace linq
 		}
 
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<orderby_range<range_type, TSelector>> orderby_descending(const TSelector & selector) const
+		_NODISCARD enumerable<orderby_range<range_type, TSelector>> orderby_descending(const TSelector & selector) const
 		{
 			return enumerable<orderby_range<range_type, TSelector>>(
 				orderby_range<range_type, TSelector>(this->range, selector, false)
@@ -584,14 +919,14 @@ namespace linq
 		}
 
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<thenby_range<range_type, TSelector>> thenby(const TSelector & selector) const
+		_NODISCARD enumerable<thenby_range<range_type, TSelector>> thenby(const TSelector & selector) const
 		{
 			return thenby_ascending(selector);
 		}
 
 
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<thenby_range<range_type, TSelector>> thenby_ascending(const TSelector & selector) const
+		_NODISCARD enumerable<thenby_range<range_type, TSelector>> thenby_ascending(const TSelector & selector) const
 		{
 			return enumerable<thenby_range<range_type, TSelector>>(
 				thenby_range<range_type, TSelector>(this->range, selector, true)
@@ -599,7 +934,7 @@ namespace linq
 		}
 
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
-		constexpr enumerable<thenby_range<range_type, TSelector>> thenby_descending(const TSelector & selector) const
+		_NODISCARD enumerable<thenby_range<range_type, TSelector>> thenby_descending(const TSelector & selector) const
 		{
 			return enumerable<thenby_range<range_type, TSelector>>(
 				thenby_range<range_type, TSelector>(this->range, selector, false)
@@ -607,33 +942,77 @@ namespace linq
 		}
 
 		template<range_concept TOtherRange>
-		constexpr bool sequence_equal(const enumerable<TOtherRange> & enumerable) const
+		_NODISCARD bool sequence_equal(const enumerable<TOtherRange> & enumerable) const
 		{
-			return sequence_equal_impl(this->range, enumerable.to_range());
+			range_type lhs  = this->range;
+			TOtherRange rhs = enumerable.to_range();
+			
+			while (true)
+			{
+				const bool lhs_move = lhs.move_next();
+				const bool rhs_move = rhs.move_next();
+
+				if (lhs_move != rhs_move)
+				{
+					return false;
+				}
+
+				if (!lhs_move && !rhs_move)
+				{
+					return true;
+				}
+
+				if (lhs.get_value() != rhs.get_value())
+				{
+					return false;
+				}
+			}
 		}
 
 		template<range_concept TOtherRange, typename TPredicate, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TPredicate, value_type, value_type>, bool>>>
-		constexpr bool sequence_equal(const enumerable<TOtherRange> & enumerable, const TPredicate & predicate) const
+		_NODISCARD bool sequence_equal(const enumerable<TOtherRange> & enumerable, const TPredicate & predicate) const
 		{
-			return sequence_equal_impl(this->range, enumerable.to_range(), predicate);
+			range_type lhs = this->range;
+			TOtherRange rhs = enumerable.to_range();
+
+			while (true)
+			{
+				const bool lhs_move = lhs.move_next();
+				const bool rhs_move = rhs.move_next();
+
+				if (lhs_move != rhs_move)
+				{
+					return false;
+				}
+
+				if (!lhs_move && !rhs_move)
+				{
+					return true;
+				}
+
+				if (!predicate(lhs.get_value(), rhs.get_value()))
+				{
+					return false;
+				}
+			}
 		}
 
 		template<typename TEnumerableSelection, typename = std::enable_if_t<std::is_invocable_v<TEnumerableSelection, typename range_type::value_type>>>
-		constexpr enumerable<select_many_range<range_type, TEnumerableSelection>> select_many(const TEnumerableSelection & selection) const
+		_NODISCARD enumerable<select_many_range<range_type, TEnumerableSelection>> select_many(const TEnumerableSelection & selection) const
 		{
 			return enumerable<select_many_range<range_type, TEnumerableSelection>>(
 				select_many_range<range_type, TEnumerableSelection>(this->range, selection)
 			);
 		}
 
-		constexpr enumerable<pairwise_range<range_type>> pairwise() const
+		_NODISCARD enumerable<pairwise_range<range_type>> pairwise() const
 		{
 			return enumerable<pairwise_range<range_type>>(
 				pairwise_range<range_type>(this->range)
 			);
 		}
 		
-		constexpr std::basic_string<char> concatenate(
+		_NODISCARD std::basic_string<char> concatenate(
 			const std::string & separator,
 			size_t capacity = 16
 		)
@@ -641,7 +1020,7 @@ namespace linq
 			return concatenate_impl<char>(this->range, separator, capacity);
 		}
 
-		constexpr std::basic_string<wchar_t> concatenate(
+		_NODISCARD std::basic_string<wchar_t> concatenate(
 			const std::wstring & separator,
 			size_t capacity = 16
 		)
@@ -660,7 +1039,7 @@ namespace linq
 				std::is_invocable_v<TJoinSelection, typename range_type::value_type, typename TEnumerable::range_type::value_type>
 			>
 		>
-		constexpr enumerable<join_range<range_type, TEnumerable, TLhsIdSelection, TRhsIdSelection, TJoinSelection>> join(
+		_NODISCARD enumerable<join_range<range_type, TEnumerable, TLhsIdSelection, TRhsIdSelection, TJoinSelection>> join(
 			const TEnumerable & enumerable_value,
 			const TLhsIdSelection & lhs_id_selection,
 			const TRhsIdSelection & rhs_id_selection,
@@ -679,30 +1058,66 @@ namespace linq
 		}
 
 		template<template<typename, typename> typename TMap = std::map, typename TKeySelection, typename = std::enable_if_t<std::is_invocable_v<TKeySelection, value_type>>>
-		constexpr TMap<std::invoke_result_t<TKeySelection, value_type>, value_type> to_map(const TKeySelection & key_selection) const
+		_NODISCARD TMap<std::invoke_result_t<TKeySelection, value_type>, value_type> to_map(const TKeySelection & key_selection) const
 		{
-			return to_map_impl<TMap, TKeySelection>(this->range, key_selection);
+			range_type copy = this->range;
+			
+			TMap<std::invoke_result_t<TKeySelection, value_type>, value_type> result;
+			while (copy.move_next())
+			{
+				const auto value = copy.get_value();
+				const auto key = key_selection(value);
+				result.insert({ key, value });
+			}
+			return result;
 		}
 
 		template<template<typename> typename TSet = std::set>
-		constexpr TSet<value_type> to_set() const
+		_NODISCARD TSet<value_type> to_set() const
 		{
-			return to_set_impl<TSet>(this->range);
+			range_type copy = this->range;
+			
+			TSet<value_type> result;
+
+			while (copy.move_next())
+			{
+				result.insert(copy.get_value());
+			}
+
+			return result;
 		}
 
 		template<template<typename> typename TQueue = std::queue>
-		constexpr TQueue<value_type> to_queue() const
+		_NODISCARD TQueue<value_type> to_queue() const
 		{
-			return to_queue_impl<TQueue>(this->range);
+			range_type copy = this->range;
+			
+			TQueue<value_type> result;
+
+			while (copy.move_next())
+			{
+				result.push(copy.get_value());
+			}
+
+			return result;
 		}
 
-		constexpr std::stack<value_type> to_stack() const
+		_NODISCARD std::stack<value_type> to_stack() const
 		{
-			return to_stack_impl(this->range);
+			range_type copy = this->range;
+			
+			std::stack<value_type> result;
+
+			while (copy.move_next())
+			{
+				result.push(copy.get_value());
+			}
+
+			return result;
 		}
 		
 		template<typename TEnumerable>
-		constexpr enumerable<union_range<range_type, TEnumerable>> union_with(const TEnumerable & enumerable_range) const
+		_NODISCARD enumerable<union_range<range_type, TEnumerable>> union_with(const TEnumerable & enumerable_range) const
 		{
 			return enumerable<union_range<range_type, TEnumerable>>(
 				union_range<range_type, TEnumerable>(
@@ -712,7 +1127,7 @@ namespace linq
 			);
 		}
 
-		constexpr enumerable<shuffle_range<range_type>> shuffle() const
+		_NODISCARD enumerable<shuffle_range<range_type>> shuffle() const
 		{
 			return enumerable<shuffle_range<range_type>>(
 				shuffle_range<range_type>(this->range)
@@ -720,721 +1135,52 @@ namespace linq
 		}
 
 		template<typename TGroupSelector, typename = std::enable_if_t<std::is_invocable_v<TGroupSelector, value_type>>>
-		constexpr lookup_table<range_type, TGroupSelector> to_lookup(const TGroupSelector & selector) const
+		_NODISCARD lookup_table<range_type, TGroupSelector> to_lookup(const TGroupSelector & selector) const
 		{
 			return lookup_table<range_type, TGroupSelector>(
 				lookup_table<range_type, TGroupSelector>(this->range, selector)
 			);
 		}
+
+		template<typename TValue, typename = std::enable_if_t<std::is_convertible_v<value_type, TValue>>>
+		_NODISCARD auto cast() const
+		{
+			return this->select([](const value_type & value)
+			{
+				return static_cast<TValue>(value);
+			});
+		}
+		
+		_NODISCARD value_type single() const
+		{
+			range_type copy = this->range;
+			
+			if (!copy.move_next())
+				throw invalid_operation_exception();
+
+			return copy.get_value();
+		}
+
+		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
+		_NODISCARD value_type single(const TPredicate & predicate) const
+		{
+			range_type copy = this->range;
+			
+			while (copy.move_next())
+			{
+				const return_type value = copy.get_value();
+
+				if (predicate(value))
+					return value;
+			}
+
+			throw invalid_operation_exception();
+		}
 	
 	private:
 
-		/// <summary>
-		/// Implementation to create a list based of a
-		/// range
-		/// </summary>
-		/// <param name="range">the range containing the values to insert into the list</param>
-		constexpr static std::list<value_type> to_list_impl(range_type range)
-		{
-			std::list<value_type> result;
-			
-			while (range.move_next())
-			{
-				result.push_back(range.get_value());
-			}
-
-			return result;
-		}
-
-		/// <summary>
-		/// Implementation to create a vector based on the
-		/// values of a range
-		/// </summary>
-		/// <param name="range">the range containing the values</param>
-		/// <param name="capacity">the capacity of the vector (performance reasons)</param>
-		constexpr static std::vector<value_type> to_vector_impl(range_type range, size_t capacity)
-		{
-			std::vector<value_type> result;
-			result.reserve(capacity);
-			
-			while (range.move_next())
-			{
-				result.push_back(range.get_value());
-			}
-
-			return result;
-		}
-
-		/// <summary>
-		/// Implementation for a for-each iteration through the whole range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="action">the action to perform for each value</param>
-		template<typename TAction, typename = std::enable_if_t<is_action<TAction>>>
-		constexpr static void for_each_impl(range_type range, const TAction & action)
-		{
-			while (range.move_next())
-			{
-				action(range.get_value());
-			}
-		}
-
-		/// <summary>
-		/// Implementation for a for-each iteration through the whole range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="action">the action to perform for each value</param>
-		template<typename TAction, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAction, value_type, size_t>, void>>>
-		constexpr static void indexed_for_each_impl(range_type range, const TAction & action)
-		{
-			size_t index = 0;
-			while (range.move_next())
-			{
-				action(range.get_value(), index++);
-			}
-		}
-
-		/// <summary>
-		/// Determines the lowest value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		constexpr static value_type min_impl(range_type range)
-		{
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto record = range.get_value();
-
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-
-				if (value < record)
-					record = value;
-			}
-			
-			return record;
-		}
-
-		/// <summary>
-		/// Determines the lowest value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="transformation">a transformation function for each element</param>
-		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		constexpr static TResult min_impl(range_type range, const TTransformation & transformation)
-		{
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto record = transformation(range.get_value());
-
-			while (range.move_next())
-			{
-				const auto value = transformation(range.get_value());
-
-				if (value < record)
-					record = value;
-			}
-
-			return record;
-		}
-
-		/// <summary>
-		/// Determines the highest value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		constexpr static value_type max_impl(range_type range)
-		{
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto record = range.get_value();
-
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-
-				if (value > record)
-					record = value;
-			}
-
-			return record;
-		}
-
-		/// <summary>
-		/// Determines the highest value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="transformation">a transformation function for each element</param>
-		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		constexpr static TResult max_impl(range_type range, const TTransformation & transformation)
-		{
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto record = transformation(range.get_value());
-
-			while (range.move_next())
-			{
-				const auto value = transformation(range.get_value());
-
-				if (value > record)
-					record = value;
-			}
-
-			return record;
-		}
-
-		/// <summary>
-		/// Determines the number of elements held by the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the number of elements</returns>
-		constexpr static size_t count_impl(range_type range)
-		{
-			size_t count = 0;
-
-			while (range.move_next())
-				++count;
-			
-			return count;
-		}
-
-		/// <summary>
-		/// Determines the number of elements held by the range satisfying
-		/// the condition of the predicate
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="predicate">a predicate for each element deciding whether to count that element or not</param>
-		/// <returns>the number of elements satisfying the predicate</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr static size_t count_if_impl(range_type range, const TPredicate & predicate)
-		{
-			size_t count = 0;
-
-			while (range.move_next())
-				if(predicate(range.get_value()))
-					++count;
-
-			return count;
-		}
-
-		/// <summary>
-		/// Determines whether the range has an element or
-		/// is empty
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>True if the range has at least one element to process</returns>
-		constexpr static bool any_impl(range_type range)
-		{
-			return range.move_next();
-		}
-
-		/// <summary>
-		/// Iterates through the range and checks the predicate on each value of
-		/// the range
-		/// </summary>
-		/// <param name="range">the range to iterate through</param>
-		/// <param name="predicate">the predicate which needs to be satisfied by each range-value</param>
-		/// <returns></returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr static bool any_impl(range_type range, const TPredicate & predicate)
-		{
-			while (range.move_next())
-			{
-				if (predicate(range.get_value()))
-					return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Iterates through the range and checks the predicate on each value of
-		/// the range
-		/// </summary>
-		/// <param name="range">the range to iterate through</param>
-		/// <param name="predicate">the predicate which needs to be satisfied by each range-value</param>
-		/// <returns></returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr static bool all_impl(range_type range, const TPredicate & predicate)
-		{
-			while (range.move_next())
-			{
-				if (!predicate(range.get_value()))
-					return false;
-			}
-
-			return true;
-		}
-
-		/// <summary>
-		/// Iterates through the range and compares each value with the given
-		/// one by using the == operator
-		/// </summary>
-		/// <param name="range">the range to iterate through</param>
-		/// <param name="value">the value to search for</param>
-		/// <returns>True if the value was found</returns>
-		constexpr static bool contains_impl(range_type range, const value_type & value)
-		{
-			while (range.move_next())
-			{
-				if (range.get_value() == value)
-					return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Iterates through the range and compares each value with the given
-		/// one by using the == operator
-		/// </summary>
-		/// <param name="range">the range to iterate through</param>
-		/// <param name="predicate">the predicate to satisfy</param>
-		/// <returns>True if the value was found</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		constexpr static bool contains_if_impl(range_type range, const TPredicate & predicate)
-		{
-			while (range.move_next())
-			{
-				if(predicate(range.get_value()))
-					return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Calculates the average value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the average of the range</returns>
-		static constexpr value_type avg_impl(range_type range)
-		{
-			// we don't have any elements to work with
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto value = range.get_value();
-			size_t count = 1;
-
-			while (range.move_next())
-			{
-				value += range.get_value();
-				++count;
-			}
-
-			return value / count;
-		}
-
-		/// <summary>
-		/// Calculates the average value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="transformation">a function to transform the values of the range</param>
-		/// <returns>the average of the range</returns>
-		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		static constexpr TResult avg_impl(range_type range, const TTransformation & transformation)
-		{
-			// we don't have any elements to work with
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto value = transformation(range.get_value());
-			size_t count = 1;
-
-			while (range.move_next())
-			{
-				value += transformation(range.get_value());
-				++count;
-			}
-
-			return value / count;
-		}
-
-		/// <summary>
-		/// Calculates the sum value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the sum of the range</returns>
-		static constexpr value_type sum_impl(range_type range)
-		{
-			// we don't have any elements to work with
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto value = range.get_value();
-
-			while (range.move_next())
-			{
-				value += range.get_value();
-			}
-
-			return value;
-		}
-
-		/// <summary>
-		/// Calculates the sum value of the range
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="transformation">a function to transform the values of the range</param>
-		/// <returns>the sum of the range</returns>
-		template<typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, value_type>>
-		static constexpr TResult sum_impl(range_type range, const TTransformation & transformation)
-		{
-			// we don't have any elements to work with
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto value = transformation(range.get_value());
-
-			while (range.move_next())
-			{
-				value += transformation(range.get_value());
-			}
-
-			return value;
-		}
-
-		/// <summary>
-		/// aggregates each value with an accumulator starting at a certain seed
-		/// </summary>
-		/// <typeparam name="TAccumulate">the starting-value for the aggregation</typeparam>
-		/// <typeparam name="TAccumulator">the accumulator to use for each value in the list</typeparam>
-		/// <param name="seed">the starting value of the aggregation</param>
-		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
-		/// <param name="range">the range to operate on</param>
-		template<typename TAccumulate, typename TAccumulator, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
-		static constexpr TAccumulate aggregate_impl(range_type range, const TAccumulate & seed, const TAccumulator & accumulator)
-		{
-			auto value = seed;
-
-			while (range.move_next())
-			{
-				value = accumulator(value, range.get_value());
-			}
-			
-			return value;
-		}
-
-		/// <summary>
-		/// aggregates each value with an accumulator starting at a certain seed
-		/// and returns the transformed result
-		/// </summary>
-		/// <typeparam name="TAccumulate">the starting-value for the aggregation</typeparam>
-		/// <typeparam name="TAccumulator">the accumulator to use for each value in the list</typeparam>
-		/// <typeparam name="TTransformation">the transformation type used for the final result</typeparam>
-		/// <typeparam name="TResult">result-type of the transformation</typeparam>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="seed">the starting value of the aggregation</param>
-		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
-		/// <param name="transformation">the transformation for the result</param>
-		template<typename TAccumulate, typename TAccumulator, typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, TAccumulate>, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
-		static constexpr TResult aggregate_impl(range_type range, const TAccumulate & seed, const TAccumulator & accumulator, const TTransformation & transformation)
-		{
-			auto value = seed;
-		
-			while (range.move_next())
-			{
-				value = accumulator(value, range.get_value());
-			}
-		
-			return transformation(value);
-		}
-
-		/// <summary>
-		/// Looks up a specific element at a certain index
-		/// in the range.
-		///
-		/// This method throws
-		/// an index_out_of_bounds_exception in case
-		/// the index is too low or too high
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="index">the index of the element</param>
-		/// <returns>the value stored behind that index</returns>
-		static constexpr value_type element_at_impl(range_type range, const size_t index)
-		{
-			size_t current = 0;
-			while (current <= index)
-			{
-				if(!range.move_next())
-				{
-					throw index_out_of_bounds_exception();
-				}
-
-				current++;
-			}
-
-			return range.get_value();
-		}
-
-		/// <summary>
-		/// Looks up a specific element at a certain index
-		/// in the range.
-		///
-		/// If the index is out of bounds, the default is returned
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="index">the index of the element</param>
-		/// <returns>the value stored behind that index</returns>
-		static constexpr value_type element_at_or_default_impl(range_type range, const size_t index)
-		{
-			size_t current = 0;
-			while (current <= index)
-			{
-				if (!range.move_next())
-				{
-					return value_type{};
-				}
-
-				current++;
-			}
-
-			return range.get_value();
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty, a sequence_empty_exception will be thrown.
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the first element in the list</returns>
-		static constexpr value_type first_impl(range_type range)
-		{
-			if (range.move_next())
-				return range.get_value();
-
-			throw sequence_empty_exception();
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty, the default will be returned
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the first element in the list</returns>
-		static constexpr value_type first_or_default_impl(range_type range)
-		{
-			if (range.move_next())
-				return range.get_value();
-
-			return value_type{};
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty, the default will be returned
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the first element in the list</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		static constexpr value_type first_or_default_impl(range_type range, const TPredicate & predicate)
-		{
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-				
-				if (predicate(value))
-					return value;
-			}
-
-			return value_type{};
-		}
-		
-		/// <summary>
-		/// Determines the first element of the range which satisfies the predicate.
-		/// If the range is empty, a sequence_empty_exception will be thrown.
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="predicate">the predicate to satisfy</param>
-		/// <returns>the first element in the range which satisfies the predicate</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		static constexpr value_type first_impl(range_type range, const TPredicate & predicate)
-		{
-			while(range.move_next())
-			{
-				const auto value = range.get_value();
-
-				if (predicate(value))
-					return value;
-			}
-
-			throw sequence_empty_exception();
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty, a sequence_empty_exception will be thrown.
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the last element in the list</returns>
-		static constexpr value_type last_impl(range_type range)
-		{
-			if(!range.move_next())
-				throw sequence_empty_exception();
-
-			auto result = range.get_value();
-
-			while (range.move_next())
-			{
-				result = range.get_value();
-			}
-			
-			return result;
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty, a sequence_empty_exception will be thrown.
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="predicate">the predicate which needs to be satisfied by the range values</param>
-		/// <returns>the last element in the list</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		static constexpr value_type last_impl(range_type range, const TPredicate & predicate)
-		{
-			if (!range.move_next())
-				throw sequence_empty_exception();
-
-			auto result = range.get_value();
-			bool updated = false;
-
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-				
-				if(predicate(value))
-				{
-					result = value;
-					updated = true;
-				}
-			}
-
-			if (updated)
-				return result;
-			
-			if (predicate(result))
-				return result;
-			
-			throw sequence_empty_exception();
-		}
-		
-		/// <summary>
-		/// Determines the last element of the range.
-		/// If the range is empty, the default will be returned
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <returns>the last element in the list</returns>
-		static constexpr value_type last_or_default_impl(range_type range)
-		{
-			if (!range.move_next())
-				return value_type{};
-
-			auto result = range.get_value();
-
-			while (range.move_next())
-			{
-				result = range.get_value();
-			}
-			
-			return result;
-		}
-
-		/// <summary>
-		/// Determines the first element of the range.
-		/// If the range is empty or not values satisfied the predicate, the default will be returnedd
-		/// 
-		/// </summary>
-		/// <param name="range">the range to operate on</param>
-		/// <param name="predicate">the predicate which needs to be satisfied by the range values</param>
-		/// <returns>the last element in the list</returns>
-		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
-		static constexpr value_type last_or_default_impl(range_type range, const TPredicate & predicate)
-		{
-			if (!range.move_next())
-				return value_type{};
-
-			auto result = range.get_value();
-			bool updated = false;
-
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-
-				if (predicate(value))
-				{
-					result = value;
-					updated = true;
-				}
-			}
-
-			if (updated)
-				return result;
-
-			if (predicate(result))
-				return result;
-
-			return value_type{};
-		}
-
-		template<range_concept TOtherRange>
-		static constexpr bool sequence_equal_impl(range_type lhs, TOtherRange rhs)
-		{
-			while (true)
-			{
-				const bool lhs_move = lhs.move_next();
-				const bool rhs_move = rhs.move_next();
-
-				if (lhs_move != rhs_move)
-					return false;
-
-				if(!lhs_move && !rhs_move)
-				{
-					return true;
-				}
-
-				if(lhs.get_value() != rhs.get_value())
-				{
-					return false;
-				}
-			}
-		}
-
-		template<range_concept TOtherRange, typename TPredicate, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TPredicate, value_type, value_type>, bool>>>
-		static constexpr bool sequence_equal_impl(range_type lhs, TOtherRange rhs, const TPredicate & predicate)
-		{
-			while (true)
-			{
-				const bool lhs_move = lhs.move_next();
-				const bool rhs_move = rhs.move_next();
-
-				if (lhs_move != rhs_move)
-					return false;
-
-				if (!lhs_move && !rhs_move)
-				{
-					return true;
-				}
-
-				if (!predicate(lhs.get_value(), rhs.get_value()))
-				{
-					return false;
-				}
-			}
-		}
-
 		template<typename TChar>
-		static constexpr std::basic_string<TChar> concatenate_impl(
+		static _NODISCARD std::basic_string<TChar> concatenate_impl(
 			range_type range,
 			const std::basic_string<TChar> & separator,
 			size_t capacity
@@ -1460,58 +1206,7 @@ namespace linq
 
 			return std::basic_string<TChar>(buffer.begin(), buffer.end());
 		}
-
-		template<template<typename, typename> typename TMap, typename TKeySelection, typename = std::enable_if_t<std::is_invocable_v<TKeySelection, value_type>>>
-		static constexpr TMap<std::invoke_result_t<TKeySelection, value_type>, value_type> to_map_impl(range_type range, const TKeySelection & key_selection)
-		{
-			TMap<std::invoke_result_t<TKeySelection, value_type>, value_type> result;
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-				const auto key   = key_selection(value);
-				result.insert({key, value});
-			}
-			return result;
-		}
-
-		template<template<typename> typename TSet>
-		static constexpr TSet<value_type> to_set_impl(range_type range)
-		{
-			TSet<value_type> result;
-			
-			while (range.move_next())
-			{
-				result.insert(range.get_value());
-			}
-			
-			return result;
-		}
-
-		template<template<typename> typename TQueue>
-		static constexpr TQueue<value_type> to_queue_impl(range_type range)
-		{
-			TQueue<value_type> result;
-
-			while (range.move_next())
-			{
-				result.push(range.get_value());
-			}
-			
-			return result;
-		}
-
-		static constexpr std::stack<value_type> to_stack_impl(range_type range)
-		{
-			std::stack<value_type> result;
-
-			while (range.move_next())
-			{
-				result.push(range.get_value());
-			}
-
-			return result;
-		}
-	
+		
 	private:
 		
 		/// <summary>
@@ -1543,22 +1238,22 @@ namespace linq
 
 	public:
 		
-		constexpr lookup_range()
+		_NODISCARD lookup_range()
 			: iterator(), container(), state(initial)
 		{
 		}
 		
-		constexpr explicit lookup_range(const container_type & container)
+		_NODISCARD_CTOR explicit lookup_range(const container_type & container)
 			: iterator(), container(container), state(initial)
 		{
 		}
 		
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			switch (this->state)
 			{
@@ -1622,7 +1317,7 @@ namespace linq
 	
 	public:
 
-		constexpr explicit outer_lookup_range(
+		_NODISCARD_CTOR explicit outer_lookup_range(
 			range_type range,
 			const group_selector_type & selector
 		)
@@ -1653,7 +1348,7 @@ namespace linq
 			});
 		}
 		
-		constexpr list_type get_values_for_key(const key_type & key) const
+		_NODISCARD list_type get_values_for_key(const key_type & key) const
 		{
 			const auto itr = std::find_if(this->container.begin(), this->container.end(), [&key](const auto & current_value)
 			{
@@ -1685,7 +1380,7 @@ namespace linq
 	
 	public:
 
-		constexpr explicit lookup_table(
+		_NODISCARD_CTOR explicit lookup_table(
 			underlying_range_type range,
 			const group_selector_type & selector
 		) : enumerable<outer_lookup_range<underlying_range_type, TGroupSelector>>(
@@ -1694,7 +1389,7 @@ namespace linq
 		{
 		}
 
-		constexpr enumerable<lookup_range<container_type>> operator [] (const key_type & key) const
+		_NODISCARD enumerable<lookup_range<container_type>> operator [] (const key_type & key) const
 		{
 			const auto & outer_range = this->to_range();
 			const auto values = outer_range.get_values_for_key(key);
@@ -1714,7 +1409,7 @@ namespace linq
 	/// <param name="array">array instance</param>
 	/// <returns>an enumerable of type iterator_range</returns>
 	template<typename TArray, int ArraySize>
-	constexpr enumerable<iterator_range<typename array_traits<TArray[ArraySize]>::iterator>> from(const TArray(& array)[ArraySize])
+	_NODISCARD enumerable<iterator_range<typename array_traits<TArray[ArraySize]>::iterator>> from(const TArray(& array)[ArraySize])
 	{
 		using iterator = typename array_traits<TArray[ArraySize]>::iterator;
 		const iterator begin = array;
@@ -1733,7 +1428,7 @@ namespace linq
 	/// <param name="container">the container holding the values to store</param>
 	/// <returns>An enumerable object holding the values provided from the container</returns>
 	template<container_concept TContainer>
-	constexpr enumerable<iterator_range<typename TContainer::const_iterator>> from(
+	_NODISCARD enumerable<iterator_range<typename TContainer::const_iterator>> from(
 		const TContainer & container
 	)
 	{
@@ -1753,7 +1448,7 @@ namespace linq
 	/// <param name="end">end of the iterator</param>
 	/// <returns>enumerable object holding the iterator as range</returns>
 	template<typename TIterator>
-	constexpr enumerable<iterator_range<TIterator>> from(
+	_NODISCARD enumerable<iterator_range<TIterator>> from(
 		const TIterator & begin,
 		const TIterator & end
 	)
@@ -1770,7 +1465,7 @@ namespace linq
 	/// <param name="value">the actual value to repeat</param>
 	/// <param name="repetitions">the number of times to repeat the value</param>
 	template<typename TValue>
-	constexpr enumerable<repeat_range<TValue>> repeat(const TValue & value, size_t repetitions)
+	_NODISCARD enumerable<repeat_range<TValue>> repeat(const TValue & value, size_t repetitions)
 	{
 		return enumerable<repeat_range<TValue>>(
 			repeat_range<TValue>(value, repetitions)
@@ -1782,7 +1477,7 @@ namespace linq
 	/// </summary>
 	/// <typeparam name="TValue">the value-type of the non-existing value</typeparam>
 	template<typename TValue>
-	constexpr enumerable<empty_range<TValue>> empty()
+	_NODISCARD enumerable<empty_range<TValue>> empty()
 	{
 		return enumerable<empty_range<TValue>>(
 			empty_range<TValue>()
@@ -1797,7 +1492,7 @@ namespace linq
 	/// <param name="end">inclusive end value</param>
 	/// <param name="increment">the amount to increment in each iteration</param>
 	template<typename TValue>
-	constexpr enumerable<increment_range<TValue>> range(
+	_NODISCARD enumerable<increment_range<TValue>> range(
 		const TValue & start,
 		const TValue & end,
 		const TValue & increment

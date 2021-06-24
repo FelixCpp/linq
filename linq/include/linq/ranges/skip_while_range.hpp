@@ -29,7 +29,7 @@ namespace linq
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
 		/// <param name="predicate">a predicate to indicate whether it should be skipped or not</param>
-		constexpr explicit skip_while_range(
+		_NODISCARD_CTOR explicit skip_while_range(
 			const range_type & range,
 			const predicate_type & predicate
 		) : range(range), predicate(predicate), skipping(true)
@@ -39,7 +39,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->range.get_value();
 		}
@@ -47,7 +47,7 @@ namespace linq
 		/// <summary>
 		/// Moves to the next element
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->skipping && this->range.move_next())
 			{

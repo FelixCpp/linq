@@ -22,7 +22,7 @@ namespace linq
 		/// </summary>
 		/// <param name="begin">begin of the iterator</param>
 		/// <param name="end">end of the iterator</param>
-		constexpr explicit iterator_range(const iterator & begin, const iterator & end)
+		_NODISCARD_CTOR explicit iterator_range(const iterator & begin, const iterator & end)
 			: current(begin), next(begin), end(end)
 		{
 		}
@@ -30,7 +30,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->current;
 		}
@@ -39,7 +39,7 @@ namespace linq
 		/// Moves to the next element
 		/// </summary>
 		/// <returns>True if there is an element left to process</returns>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if (this->next == this->end)
 				return false;

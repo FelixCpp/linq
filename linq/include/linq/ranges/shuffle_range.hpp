@@ -19,7 +19,7 @@ namespace linq
 		/// </summary>
 		using range_type         = std::remove_cvref_t<TRange>;
 		using value_type         = typename range_type::value_type;
-		using return_type        = typename range_type::return_type;
+		using return_type        = const value_type &;
 		using list_type          = std::vector<value_type>;
 		using list_iterator_type = typename list_type::const_iterator;
 
@@ -29,16 +29,16 @@ namespace linq
 		/// Constructs a shuffle range
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
-		constexpr explicit shuffle_range(const range_type & range)
+		_NODISCARD_CTOR explicit shuffle_range(const range_type & range)
 			: range(range)
 		{}
 
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->values.empty())
 			{

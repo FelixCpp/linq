@@ -15,26 +15,26 @@ namespace linq
 		using enumerable        = std::remove_cvref_t<TEnumerable>;
 		using lhs_range_type    = std::remove_cvref_t<TRange>;
 		using rhs_range_type    = typename enumerable::range_type;
-		using value_type        = typename lhs_range_type::value_type;
-		using return_type       = typename lhs_range_type::return_type;
+		using value_type        = std::remove_cvref_t<typename lhs_range_type::value_type>;
+		using return_type       = const value_type &;
 		using set_type          = std::set<value_type>;
 		using set_iterator_type = typename set_type::const_iterator;
 	
 	public:
 
-		constexpr explicit union_range(
+		_NODISCARD_CTOR explicit union_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range
 		)
 			: lhs_range(lhs_range), rhs_range(rhs_range), values(), iterator()
 		{}
 
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->rhs_range.move_next())
 			{

@@ -27,19 +27,19 @@ namespace linq
 	
 	public:
 		
-		constexpr explicit select_many_range(
+		_NODISCARD_CTOR explicit select_many_range(
 			const range_type & range,
 			const enumerable_selection & selection
 		) : range(range), selection(selection)
 		{
 		}
 
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->current_range->get_value();
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->current_range.has_value() && this->current_range->move_next())
 			{

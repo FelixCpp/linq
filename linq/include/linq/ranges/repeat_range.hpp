@@ -13,7 +13,7 @@ namespace linq
 		/// <summary>
 		/// Type definitions
 		/// </summary>
-		using value_type  = std::remove_cvref_t<TValue>;
+		using value_type  = TValue;
 		using return_type = const TValue &;
 
 	public:
@@ -23,7 +23,7 @@ namespace linq
 		/// </summary>
 		/// <param name="value">the value to repeat n times</param>
 		/// <param name="repetitions">the number of repetitions</param>
-		constexpr explicit repeat_range(const value_type & value, const size_t repetitions)
+		_NODISCARD_CTOR explicit repeat_range(const value_type & value, const size_t repetitions)
 			: value(value), repetitions(repetitions)
 		{
 		}
@@ -31,7 +31,7 @@ namespace linq
 		/// <summary>
 		/// Returns the privately stored value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->value;
 		}
@@ -39,7 +39,7 @@ namespace linq
 		/// <summary>
 		/// Steps forward by one element
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->repetitions > 0)
 			{

@@ -27,14 +27,14 @@ namespace linq
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
 		/// <param name="count">the number of elements to skip starting from the first element</param>
-		constexpr explicit skip_range(const range_type & range, const size_type count)
+		_NODISCARD_CTOR explicit skip_range(const range_type & range, const size_type count)
 			: range(range), remaining(count)
 		{}
 
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->range.get_value();
 		}
@@ -42,7 +42,7 @@ namespace linq
 		/// <summary>
 		/// Moves to the next element
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->remaining > 0 && this->range.move_next())
 			{

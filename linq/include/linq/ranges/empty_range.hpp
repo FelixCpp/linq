@@ -13,7 +13,7 @@ namespace linq
 		/// <summary>
 		/// Type definitions
 		/// </summary>
-		using value_type  = std::remove_cvref_t<TValue>;
+		using value_type  = TValue;
 		using return_type = TValue;
 
 	public:
@@ -22,7 +22,7 @@ namespace linq
 		/// throws an invalid_operation_exception since
 		/// we have no value to return ever
 		/// </summary>
-		return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			throw invalid_operation_exception();
 		}
@@ -30,7 +30,7 @@ namespace linq
 		/// <summary>
 		/// returns false
 		/// </summary>
-		bool move_next()
+		_NODISCARD bool move_next()
 		{
 			return false;
 		}

@@ -15,12 +15,10 @@ namespace linq
 		/// <summary>
 		/// Type definitions
 		/// </summary>
-		using lhs_range_type = std::remove_cvref_t<TLhsRange>;
-		using rhs_range_type = std::remove_cvref_t<TRhsRange>;
-
-		using value_type  = typename lhs_range_type::value_type;
-		using return_type = typename lhs_range_type::return_type;
-
+		using lhs_range_type    = std::remove_cvref_t<TLhsRange>;
+		using rhs_range_type    = std::remove_cvref_t<TRhsRange>;
+		using value_type        = std::remove_cvref_t<typename lhs_range_type::value_type>;
+		using return_type       = const value_type &;
 		using set_type          = std::set<value_type>;
 		using set_iterator_type = typename set_type::const_iterator;
 	
@@ -31,7 +29,7 @@ namespace linq
 		/// </summary>
 		/// <param name="lhs_range">the left-hand-side range</param>
 		/// <param name="rhs_range">the right-hand-side range</param>
-		constexpr explicit intersect_with_range(
+		_NODISCARD_CTOR explicit intersect_with_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range
 		) : lhs_range(lhs_range), rhs_range(rhs_range), values(), iterator()
@@ -41,7 +39,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
@@ -50,7 +48,7 @@ namespace linq
 		/// Increments the iterator to get the next value as
 		/// active one
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->values.empty())
 			{

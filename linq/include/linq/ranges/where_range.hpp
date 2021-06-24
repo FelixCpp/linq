@@ -28,7 +28,7 @@ namespace linq
 		/// </summary>
 		/// <param name="range">the range holding the values to operate on</param>
 		/// <param name="predicate">the filter-predicate for each value</param>
-		constexpr explicit where_range(
+		_NODISCARD_CTOR explicit where_range(
 			const range_type & range,
 			const predicate_type & predicate
 		) : range(range), predicate(predicate)
@@ -38,7 +38,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value we're iterating over
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->range.get_value();
 		}
@@ -47,7 +47,7 @@ namespace linq
 		/// Iterates over the range and returns true if there is
 		/// a predicate-match on the current value
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			while (this->range.move_next())
 			{

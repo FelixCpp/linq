@@ -16,8 +16,8 @@ namespace linq
 		/// </summary>
 		using lhs_range_type    = std::remove_cvref_t<TLhsRange>;
 		using rhs_range_type    = std::remove_cvref_t<TRhsRange>;
-		using value_type        = typename lhs_range_type::value_type;
-		using return_type       = typename lhs_range_type::return_type;
+		using value_type        = std::remove_cvref_t<typename lhs_range_type::value_type>;
+		using return_type       = const value_type &;
 		using set_type          = std::set<value_type>;
 		using set_iterator_type = typename set_type::const_iterator;
 	
@@ -28,7 +28,7 @@ namespace linq
 		/// </summary>
 		/// <param name="lhs_range">original range</param>
 		/// <param name="rhs_range">range holding the values to ignore</param>
-		constexpr explicit except_range(
+		_NODISCARD_CTOR explicit except_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range
 		) : lhs_range(lhs_range), rhs_range(rhs_range), values()//, iterator()
@@ -38,7 +38,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->iterator;
 		}
@@ -46,7 +46,7 @@ namespace linq
 		/// <summary>
 		/// Inserts the next element in each call
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->values.empty())
 			{

@@ -31,8 +31,8 @@ namespace linq
 		using lhs_id_selection_type = std::remove_cvref_t<TLhsIdSelection>;
 		using rhs_id_selection_type = std::remove_cvref_t<TRhsIdSelection>;
 		using join_selection_type   = std::remove_cvref_t<TJoinSelection>;
-		using lhs_value_type        = typename lhs_range_type::value_type;
-		using rhs_value_type        = typename rhs_range_type::value_type;
+		using lhs_value_type        = std::remove_cvref_t<typename lhs_range_type::value_type>;
+		using rhs_value_type        = std::remove_cvref_t<typename rhs_range_type::value_type>;
 		using lhs_id_type           = std::invoke_result_t<lhs_id_selection_type, lhs_value_type>;
 		using rhs_id_type           = std::invoke_result_t<rhs_id_selection_type, rhs_value_type>;
 		using join_result           = std::invoke_result_t<join_selection_type, lhs_value_type, rhs_value_type>;
@@ -44,7 +44,7 @@ namespace linq
 
 	public:
 		
-		constexpr explicit join_range(
+		_NODISCARD_CTOR explicit join_range(
 			const lhs_range_type & lhs_range,
 			const rhs_range_type & rhs_range,
 			const lhs_id_selection_type & lhs_id_selection,
@@ -61,12 +61,12 @@ namespace linq
 		{
 		}
 
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return this->join_selection(this->lhs_range.get_value(), this->current->second);
 		}
 
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->start)
 			{

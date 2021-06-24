@@ -21,9 +21,9 @@ namespace linq
 		using transformation_type   = std::remove_cvref_t<TTransformation>;
 		using raw_value_type        = typename TRange::value_type;
 		using transformation_result = std::invoke_result_t<TTransformation, raw_value_type>;
-		using value_type            = transformation_result;
-		using return_type           = value_type;
-		using optional_value_type   = std::optional<transformation_result>;
+		using value_type            = std::remove_cvref_t<transformation_result>;
+		using return_type           = const value_type &;
+		using optional_value_type   = std::optional<value_type>;
 		
 	public:
 
@@ -32,7 +32,7 @@ namespace linq
 		/// </summary>
 		/// <param name="range">the range to operate on</param>
 		/// <param name="transformation">the transformation function used for each value of the range</param>
-		constexpr explicit select_range(
+		_NODISCARD_CTOR explicit select_range(
 			const range_type & range,
 			const transformation_type & transformation
 		) : range(range), transformation(transformation), value(std::nullopt)
@@ -42,7 +42,7 @@ namespace linq
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
 			return *this->value;
 		}
@@ -50,7 +50,7 @@ namespace linq
 		/// <summary>
 		/// Goes one value forward in the range
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->range.move_next())
 			{

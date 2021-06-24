@@ -15,10 +15,11 @@ namespace linq
 		/// <summary>
 		/// Type definitions
 		/// </summary>
-		using range_type  = TRange;
-		using value_type  = typename TRange::value_type;
-		using return_type = typename TRange::return_type;
-		using list_type   = std::list<value_type>;
+		using range_type         = TRange;
+		using value_type         = typename TRange::value_type;
+		using return_type        = const value_type &;
+		using list_type          = std::list<value_type>;
+		using list_iterator_type = typename list_type::const_iterator;
 
 	public:
 
@@ -28,23 +29,23 @@ namespace linq
 		/// reverse it when its needed
 		/// </summary>
 		/// <param name="range">the range to store</param>
-		constexpr explicit reverse_range(const range_type & range)
-			: range(range), values()
+		_NODISCARD_CTOR explicit reverse_range(const range_type & range)
+			: range(range), values(), iterator()
 		{
 		}
 
 		/// <summary>
 		/// Returns the current value
 		/// </summary>
-		constexpr return_type get_value() const
+		_NODISCARD return_type get_value() const
 		{
-			return this->values.front();
+			return *this->iterator;
 		}
 
 		/// <summary>
 		/// Continues iterating over the range
 		/// </summary>
-		constexpr bool move_next()
+		_NODISCARD bool move_next()
 		{
 			if(this->values.empty())
 			{
@@ -52,13 +53,15 @@ namespace linq
 				{
 					this->values.push_front(this->range.get_value());
 				}
+
+				this->iterator = this->values.begin();
 			}
 			else
 			{	
-				this->values.pop_front();
+				++this->iterator;
 			}
 			
-			return !this->values.empty();
+			return this->iterator != this->values.end();
 		}
 	
 	private:
@@ -66,8 +69,9 @@ namespace linq
 		/// <summary>
 		/// Member attributes
 		/// </summary>
-		range_type range;
-		list_type  values;
+		range_type         range;
+		list_type          values;
+		list_iterator_type iterator;
 		
 	};
 	
