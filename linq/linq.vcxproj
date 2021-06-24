@@ -175,7 +175,6 @@
     <ClInclude Include="include\linq\utils\concepts.hpp" />
     <ClInclude Include="include\linq\utils\exceptions.hpp" />
     <ClInclude Include="include\linq\utils\iterator_traits.hpp" />
-    <ClInclude Include="include\linq\utils\lambda_restrictions.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
