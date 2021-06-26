@@ -30,4 +30,12 @@ namespace linq
 		{ range.forward_get_value() } -> std::same_as<typename TRange::return_type>;
 		{ range.forward_move_next() } -> std::same_as<bool>;
 	};
+
+	template<typename TEnumerable>
+	concept enumerable_concept = requires(const TEnumerable & enumerable)
+	{
+		typename TEnumerable::range_type;
+		typename TEnumerable::value_type;
+		{ enumerable.to_range() } -> std::same_as<const typename TEnumerable::range_type &>;
+	};
 }

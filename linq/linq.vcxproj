@@ -156,6 +156,7 @@
     <ClInclude Include="include\linq\ranges\intersect_with_range.hpp" />
     <ClInclude Include="include\linq\ranges\iterator_range.hpp" />
     <ClInclude Include="include\linq\ranges\join_range.hpp" />
+    <ClInclude Include="include\linq\ranges\lookup.hpp" />
     <ClInclude Include="include\linq\ranges\orderby_range.hpp" />
     <ClInclude Include="include\linq\ranges\pairwise_range.hpp" />
     <ClInclude Include="include\linq\ranges\repeat_range.hpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="include\linq\ranges\thenby_range.hpp" />
     <ClInclude Include="include\linq\ranges\union_range.hpp" />
     <ClInclude Include="include\linq\ranges\where_range.hpp" />
+    <ClInclude Include="include\linq\ranges\zip_with_range.hpp" />
     <ClInclude Include="include\linq\utils\array_traits.hpp" />
     <ClInclude Include="include\linq\utils\concepts.hpp" />
     <ClInclude Include="include\linq\utils\exceptions.hpp" />

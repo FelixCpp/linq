@@ -30,6 +30,7 @@
 #include <linq/ranges/join_range.hpp>
 #include <linq/ranges/union_range.hpp>
 #include <linq/ranges/shuffle_range.hpp>
+#include <linq/ranges/zip_with_range.hpp>
 
 #include <linq/utils/array_traits.hpp>
 #include <linq/utils/concepts.hpp>
@@ -37,9 +38,9 @@
 namespace linq
 {
 
-	template<range_concept TRange, typename TGroupSelector>
-	class lookup_table;
-		
+	template<typename TKey, typename TValue>
+	class lookup;
+	
 	template<range_concept TRange>
 	class enumerable
 	{
@@ -286,7 +287,7 @@ namespace linq
 		/// Determines the lowest value of
 		/// the range
 		/// </summary>
-		_NODISCARD return_type min() const
+		_NODISCARD value_type min() const
 		{
 			range_type copy = this->range;
 			
@@ -336,7 +337,7 @@ namespace linq
 		/// Determines the highest value of
 		/// the range
 		/// </summary>
-		_NODISCARD return_type max() const
+		_NODISCARD value_type max() const
 		{
 			range_type copy = this->range;
 
@@ -653,7 +654,7 @@ namespace linq
 		/// </summary>
 		/// <param name="index">the index of the element</param>
 		/// <returns>the value stored behind that index</returns>
-		_NODISCARD return_type element_at(const size_t index) const
+		_NODISCARD value_type element_at(const size_t index) const
 		{
 			range_type copy = this->range;
 			
@@ -704,7 +705,7 @@ namespace linq
 		/// If the range is empty, a sequence_empty_exception will
 		/// be thrown
 		/// </summary>
-		_NODISCARD return_type first() const
+		_NODISCARD value_type first() const
 		{
 			range_type copy = this->range;
 			
@@ -1029,14 +1030,14 @@ namespace linq
 		}
 
 		template<
-			typename TEnumerable,
+			enumerable_concept TEnumerable,
 			typename TLhsIdSelection,
 			typename TRhsIdSelection,
 			typename TJoinSelection,
 			typename = std::enable_if_t<
 				std::is_invocable_v<TLhsIdSelection, value_type> &&
-				std::is_invocable_v<TRhsIdSelection, typename TEnumerable::range_type::value_type> &&
-				std::is_invocable_v<TJoinSelection, typename range_type::value_type, typename TEnumerable::range_type::value_type>
+				std::is_invocable_v<TRhsIdSelection, typename TEnumerable::value_type> &&
+				std::is_invocable_v<TJoinSelection, typename range_type::value_type, typename TEnumerable::value_type>
 			>
 		>
 		_NODISCARD enumerable<join_range<range_type, TEnumerable, TLhsIdSelection, TRhsIdSelection, TJoinSelection>> join(
@@ -1134,12 +1135,12 @@ namespace linq
 			);
 		}
 
-		template<typename TGroupSelector, typename = std::enable_if_t<std::is_invocable_v<TGroupSelector, value_type>>>
-		_NODISCARD lookup_table<range_type, TGroupSelector> to_lookup(const TGroupSelector & selector) const
+		template<typename TKeySelector>
+		_NODISCARD lookup<std::invoke_result_t<TKeySelector, value_type>, value_type> to_lookup(const TKeySelector & selector) const
 		{
-			return lookup_table<range_type, TGroupSelector>(
-				lookup_table<range_type, TGroupSelector>(this->range, selector)
-			);
+			using key_type = std::invoke_result_t<TKeySelector, value_type>;
+			
+			return lookup<key_type, value_type>(this->range, selector);
 		}
 
 		template<typename TValue, typename = std::enable_if_t<std::is_convertible_v<value_type, TValue>>>
@@ -1176,7 +1177,15 @@ namespace linq
 
 			throw invalid_operation_exception();
 		}
-	
+
+		template<enumerable_concept TEnumerable>
+		_NODISCARD enumerable<zip_with_range<range_type, typename TEnumerable::range_type>> zip_with(const TEnumerable & other) const
+		{
+			return enumerable<zip_with_range<range_type, typename TEnumerable::range_type>>(
+				zip_with_range<range_type, typename TEnumerable::range_type>(this->range, other.to_range())
+			);
+		}
+		
 	private:
 
 		template<typename TChar>
@@ -1215,190 +1224,6 @@ namespace linq
 
 		range_type range;
 		
-	};
-
-	template<container_concept TContainer>
-	class lookup_range
-	{
-	public:
-
-		using container_type = std::remove_cvref_t<TContainer>;
-		using iterator_type  = typename container_type::const_iterator;
-		using value_type     = typename container_type::value_type;
-		using return_type    = const value_type &;
-	
-	public:
-		
-		enum iterating_state
-		{
-			initial,
-			iterating,
-			end
-		};
-
-	public:
-		
-		_NODISCARD lookup_range()
-			: iterator(), container(), state(initial)
-		{
-		}
-		
-		_NODISCARD_CTOR explicit lookup_range(const container_type & container)
-			: iterator(), container(container), state(initial)
-		{
-		}
-		
-		_NODISCARD return_type get_value() const
-		{
-			return *this->iterator;
-		}
-
-		_NODISCARD bool move_next()
-		{
-			switch (this->state)
-			{
-				case initial:
-				{
-					this->iterator = this->container.begin();
-					this->state = iterating;
-					return this->iterator != this->container.end();
-				}
-
-				case iterating:
-				{
-					++this->iterator;
-
-					if(this->iterator == this->container.end())
-					{
-						this->state = end;
-						return false;
-					}
-
-					return true;
-				}
-
-				case end:
-				default:
-					return false;
-			}
-		}
-	
-	protected:
-
-		iterator_type   iterator;
-		container_type  container;
-		iterating_state state;
-		
-	};
-	
-	template<
-		range_concept TRange,
-		typename TGroupSelector,
-		typename TRangeType = std::remove_cvref_t<TRange>,
-		typename TGroupSelectorType = std::remove_cvref_t<TGroupSelector>,
-		typename TElementType = typename TRangeType::value_type,
-		typename TKeyType = std::invoke_result_t<TGroupSelectorType, TElementType>,
-		typename TListType = std::list<TElementType>,
-		typename TValueType = std::pair<TKeyType, TListType>,
-		typename TValuesType = std::list<TValueType>
-	>
-	class outer_lookup_range : public lookup_range<TValuesType>
-	{
-	public:
-
-		static_assert(std::is_invocable_v<TGroupSelector, typename TRange::value_type>, "TGroupSelector (lookup_table) has an invalid format!");
-
-		using range_type          = TRangeType;
-		using group_selector_type = TGroupSelectorType;
-		using list_type           = TListType;
-		using key_type            = TKeyType;
-		using value_type          = TValueType;
-		using return_type         = const TValueType &;
-	
-	public:
-
-		_NODISCARD_CTOR explicit outer_lookup_range(
-			range_type range,
-			const group_selector_type & selector
-		)
-		{
-			while (range.move_next())
-			{
-				const auto value = range.get_value();
-				const auto key   = selector(value);
-
-				const auto searchItr = std::find_if(this->container.begin(), this->container.end(),
-					[&key](const auto & current_pair)
-				{
-					return current_pair.first == key;
-				});
-
-				if(searchItr != this->container.end())
-				{
-					searchItr->second.push_back(value);
-				} else
-				{
-					this->container.push_back(std::make_pair(key, list_type{value}));
-				}
-			}
-
-			this->container.sort([](const auto & lhs_pair, const auto & rhs_pair)
-			{
-				return lhs_pair.first < rhs_pair.first;
-			});
-		}
-		
-		_NODISCARD list_type get_values_for_key(const key_type & key) const
-		{
-			const auto itr = std::find_if(this->container.begin(), this->container.end(), [&key](const auto & current_value)
-			{
-				return current_value.first == key;
-			});
-
-			if(itr != this->container.end())
-			{
-				return itr->second;
-			}
-
-			return {};
-		}
-	
-	};
-	
-	template<range_concept TRange, typename TGroupSelector>
-	class lookup_table : public enumerable<outer_lookup_range<TRange, TGroupSelector>>
-	{
-	public:
-
-		static_assert(std::is_invocable_v<TGroupSelector, typename TRange::value_type>, "TGroupSelector (lookup_table) has an invalid format!");
-		
-		using underlying_range_type = std::remove_cvref_t<TRange>;
-		using group_selector_type   = std::remove_cvref_t<TGroupSelector>;
-		using element_type          = typename underlying_range_type::value_type;
-		using key_type              = std::invoke_result_t<group_selector_type, element_type>;
-		using container_type        = std::list<element_type>;
-	
-	public:
-
-		_NODISCARD_CTOR explicit lookup_table(
-			underlying_range_type range,
-			const group_selector_type & selector
-		) : enumerable<outer_lookup_range<underlying_range_type, TGroupSelector>>(
-				outer_lookup_range<underlying_range_type, TGroupSelector>(range, selector)
-			)
-		{
-		}
-
-		_NODISCARD enumerable<lookup_range<container_type>> operator [] (const key_type & key) const
-		{
-			const auto & outer_range = this->to_range();
-			const auto values = outer_range.get_values_for_key(key);
-			
-			return enumerable<lookup_range<container_type>>(
-				lookup_range<container_type>(values)
-			);
-		}
-			
 	};
 	
 	/// <summary>
@@ -1504,3 +1329,5 @@ namespace linq
 	}
 	
 }
+
+#include <linq/ranges/lookup.hpp>
