@@ -149,7 +149,7 @@ namespace linq
 
 		_NODISCARD enumerable<inner_lookup_range<TKey, TValue>> operator [] (TKey key) const
 		{
-			const auto collection = this->to_range().get_values_for_key(key);
+			const auto collection = this->get_range().get_values_for_key(key);
 			auto range = inner_lookup_range<TKey, TValue>(collection);
 			return enumerable<inner_lookup_range<TKey, TValue>>(range);
 		}

@@ -31,6 +31,7 @@
 #include <linq/ranges/union_range.hpp>
 #include <linq/ranges/shuffle_range.hpp>
 #include <linq/ranges/zip_with_range.hpp>
+#include <linq/ranges/container.hpp>
 
 #include <linq/utils/array_traits.hpp>
 #include <linq/utils/concepts.hpp>
@@ -74,7 +75,7 @@ namespace linq
 		/// <summary>
 		/// Returns the range of the enumerable
 		/// </summary>
-		_NODISCARD const range_type & to_range() const
+		_NODISCARD const range_type & get_range() const
 		{
 			return this->range;
 		}
@@ -88,7 +89,7 @@ namespace linq
 		_NODISCARD enumerable<except_range<range_type, TExceptRange>> except(const enumerable<TExceptRange> & collection) const
 		{
 			return enumerable<except_range<range_type, TExceptRange>>(
-				except_range<range_type, TExceptRange>(this->range, collection.to_range())
+				except_range<range_type, TExceptRange>(this->range, collection.get_range())
 			);
 		}
 
@@ -101,7 +102,7 @@ namespace linq
 		_NODISCARD enumerable<concat_range<range_type, TConcatRange>> concat(const enumerable<TConcatRange> & collection) const
 		{
 			return enumerable<concat_range<range_type, TConcatRange>>(
-				concat_range<range_type, TConcatRange>(this->range, collection.to_range())
+				concat_range<range_type, TConcatRange>(this->range, collection.get_range())
 			);
 		}
 
@@ -142,7 +143,7 @@ namespace linq
 		_NODISCARD enumerable<intersect_with_range<range_type, TIntersectsRange>> intersect_with(const enumerable<TIntersectsRange> & collection) const
 		{
 			return enumerable<intersect_with_range<range_type, TIntersectsRange>>(
-				intersect_with_range<range_type, TIntersectsRange>(this->range, collection.to_range())
+				intersect_with_range<range_type, TIntersectsRange>(this->range, collection.get_range())
 			);
 		}
 
@@ -209,7 +210,7 @@ namespace linq
 		/// <summary>
 		/// Reverses the range
 		/// </summary>
-		_NODISCARD enumerable<reverse_range<range_type>> reverse()
+		_NODISCARD enumerable<reverse_range<range_type>> reverse() const
 		{
 			return enumerable<reverse_range<range_type>>(
 				reverse_range<range_type>(this->range)
@@ -283,6 +284,8 @@ namespace linq
 			}
 		}
 
+#ifndef min
+
 		/// <summary>
 		/// Determines the lowest value of
 		/// the range
@@ -333,6 +336,9 @@ namespace linq
 			return record;
 		}
 
+#endif // !min
+#ifndef max
+
 		/// <summary>
 		/// Determines the highest value of
 		/// the range
@@ -382,6 +388,8 @@ namespace linq
 
 			return record;
 		}
+
+#endif // !max
 
 		/// <summary>
 		/// Determines the number of elements held by the range
@@ -612,7 +620,7 @@ namespace linq
 		/// <typeparam name="TAccumulator">the accumulator to use for each value in the list</typeparam>
 		/// <param name="seed">the starting value of the aggregation</param>
 		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
-		template<typename TAccumulate, typename TAccumulator, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
+		template<typename TAccumulate, typename TAccumulator, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, TAccumulate, value_type>, TAccumulate>>>
 		_NODISCARD TAccumulate aggregate(const TAccumulate & seed, const TAccumulator & accumulator) const
 		{
 			range_type copy = this->range;
@@ -946,7 +954,7 @@ namespace linq
 		_NODISCARD bool sequence_equal(const enumerable<TOtherRange> & enumerable) const
 		{
 			range_type lhs  = this->range;
-			TOtherRange rhs = enumerable.to_range();
+			TOtherRange rhs = enumerable.get_range();
 			
 			while (true)
 			{
@@ -974,7 +982,7 @@ namespace linq
 		_NODISCARD bool sequence_equal(const enumerable<TOtherRange> & enumerable, const TPredicate & predicate) const
 		{
 			range_type lhs = this->range;
-			TOtherRange rhs = enumerable.to_range();
+			TOtherRange rhs = enumerable.get_range();
 
 			while (true)
 			{
@@ -1016,7 +1024,7 @@ namespace linq
 		_NODISCARD std::basic_string<char> concatenate(
 			const std::string & separator,
 			size_t capacity = 16
-		)
+		) const
 		{
 			return concatenate_impl<char>(this->range, separator, capacity);
 		}
@@ -1024,7 +1032,7 @@ namespace linq
 		_NODISCARD std::basic_string<wchar_t> concatenate(
 			const std::wstring & separator,
 			size_t capacity = 16
-		)
+		) const
 		{
 			return concatenate_impl<wchar_t>(this->range, separator, capacity);
 		}
@@ -1050,7 +1058,7 @@ namespace linq
 			return enumerable<join_range<range_type, TEnumerable, TLhsIdSelection, TRhsIdSelection, TJoinSelection>>(
 				join_range<range_type, TEnumerable, TLhsIdSelection, TRhsIdSelection, TJoinSelection>(
 					this->range,
-					enumerable_value.to_range(),
+					enumerable_value.get_range(),
 					lhs_id_selection,
 					rhs_id_selection,
 					join_selection
@@ -1123,7 +1131,7 @@ namespace linq
 			return enumerable<union_range<range_type, TEnumerable>>(
 				union_range<range_type, TEnumerable>(
 					this->range,
-					enumerable_range.to_range()
+					enumerable_range.get_range()
 				)
 			);
 		}
@@ -1182,10 +1190,41 @@ namespace linq
 		_NODISCARD enumerable<zip_with_range<range_type, typename TEnumerable::range_type>> zip_with(const TEnumerable & other) const
 		{
 			return enumerable<zip_with_range<range_type, typename TEnumerable::range_type>>(
-				zip_with_range<range_type, typename TEnumerable::range_type>(this->range, other.to_range())
+				zip_with_range<range_type, typename TEnumerable::range_type>(this->range, other.get_range())
 			);
 		}
-		
+
+		_NODISCARD constexpr container<range_type> to_container() const
+		{
+			return container<range_type>(this->range);
+		}
+
+		template<typename TAction, typename = std::enable_if_t<is_action<TAction>>>
+		_NODISCARD constexpr const enumerable & inline_for_each(const TAction & action) const
+		{
+			range_type copy = this->range;
+
+			while (copy.move_next())
+			{
+				action(copy.get_value());
+			}
+
+			return *this;
+		}
+
+		template<typename TAction, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAction, value_type, size_t>, void>>>
+		_NODISCARD constexpr const enumerable & indexed_inline_for_each(const TAction & action) const
+		{
+			range_type copy = this->range;
+			
+			for(size_t i = 0; copy.move_next(); i++)
+			{
+				action(copy.get_value(), i);
+			}
+
+			return *this;
+		}
+	
 	private:
 
 		template<typename TChar>

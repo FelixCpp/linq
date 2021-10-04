@@ -48,7 +48,7 @@ namespace linq
 
 			if(this->range.move_next())
 			{
-				this->current_range = this->selection(this->range.get_value()).to_range();
+				this->current_range = this->selection(this->range.get_value()).get_range();
 				return this->current_range->move_next();
 			}
 

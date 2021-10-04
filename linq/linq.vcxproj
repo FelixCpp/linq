@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClInclude Include="include\linq\enumerable.hpp" />
     <ClInclude Include="include\linq\ranges\concat_range.hpp" />
+    <ClInclude Include="include\linq\ranges\container.hpp" />
     <ClInclude Include="include\linq\ranges\distinct_range.hpp" />
     <ClInclude Include="include\linq\ranges\empty_range.hpp" />
     <ClInclude Include="include\linq\ranges\except_range.hpp" />

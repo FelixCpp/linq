@@ -105,5 +105,8 @@
     <ClInclude Include="include\linq\ranges\lookup.hpp">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="include\linq\ranges\container.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

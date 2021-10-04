@@ -36,6 +36,6 @@ namespace linq
 	{
 		typename TEnumerable::range_type;
 		typename TEnumerable::value_type;
-		{ enumerable.to_range() } -> std::same_as<const typename TEnumerable::range_type &>;
+		{ enumerable.get_range() } -> std::same_as<const typename TEnumerable::range_type &>;
 	};
 }
