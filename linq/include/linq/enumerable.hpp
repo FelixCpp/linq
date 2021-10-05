@@ -646,8 +646,8 @@ namespace linq
 		/// <param name="seed">the starting value of the aggregation</param>
 		/// <param name="accumulator">a function to accumulate a value for each element in the list</param>
 		/// <param name="transformation">the transformation for the result</param>
-		template<typename TAccumulate, typename TAccumulator, typename TTransformation, typename TResult = std::invoke_result_t<TTransformation, TAccumulate>, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, value_type, value_type>, TAccumulate>>>
-		_NODISCARD TResult aggregate(const TAccumulate & seed, const TAccumulator & accumulator, const TTransformation & transformation) const
+		template<typename TAccumulate, typename TAccumulator, typename TTransformation, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TAccumulator, TAccumulate, value_type>, TAccumulate>>>
+		_NODISCARD std::invoke_result_t<TTransformation, TAccumulate> aggregate(const TAccumulate & seed, const TAccumulator & accumulator, const TTransformation & transformation) const
 		{
 			return transformation(this->aggregate(seed, accumulator));
 		}
@@ -783,7 +783,56 @@ namespace linq
 
 			return value_type{};
 		}
-		
+
+		/// <summary>
+		/// Returns the first value or the given fallback value if there is not a single value stored
+		///	in the underlying range
+		/// </summary>
+		///	<param name="fallback_value">the value to return if there is no first value stored</param>
+		_NODISCARD value_type first_or(const value_type& fallback_value) const
+		{
+			// make a copy of the underlying range since we don't want to change it
+			range_type copy = this->range;
+
+			// check if the have any value to process
+			if(!copy.move_next())
+			{
+				// return the fallback
+				return fallback_value;
+			}
+
+			// we're ready to return a value from the underlying range
+			return copy.get_value();
+		}
+
+		/// <summary>
+		/// Tries to return the first value that satisfies the given predicate
+		/// </summary>
+		/// <typeparam name="TPredicate">the predicate type (lambda)</typeparam>
+		/// <param name="fallback_value">the value to return if no value of the underlying range satisfied the predicate</param>
+		/// <param name="predicate">the predicate to execute for each value of the underlying range</param>
+		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
+		_NODISCARD value_type first_or(const value_type& fallback_value, const TPredicate& predicate) const
+		{
+			range_type copy = this->range;
+
+			while (copy.move_next())
+			{
+				// store the current value in a temporary variable
+				const auto current_value = copy.get_value();
+
+				// check the predicate
+				if(predicate(current_value))
+				{
+					// the predicate is satisfied - return the value
+					return current_value;
+				}
+			}
+
+			// we have to return the fallback since no value satisfied the predicate
+			return fallback_value;
+		}
+
 		/// <summary>
 		/// Determines the last element of
 		/// the range.
@@ -905,6 +954,91 @@ namespace linq
 			return value_type{};
 		}
 
+		/// <summary>
+		/// Tries to get the last value from the range.
+		///	If there is no last element (in case the range is empty)
+		///	the given parameter will be returned.
+		/// </summary>
+		_NODISCARD value_type last_or(const value_type& fallback_value) const
+		{
+			// make a copy since the underlying range shouldn't change
+			range_type copy = this->range;
+			
+			// try to move forward
+			if(!copy.move_next())
+			{
+				// we don't have any value to process.
+				return fallback_value;
+			}
+
+			// store the value somewhere to return it later on
+			value_type result = copy.get_value();
+
+			// iterate through the whole range
+			while(copy.move_next())
+			{
+				result = copy.get_value(); // update the value
+			}
+
+			return result;
+		}
+
+		/// <summary>
+		/// Tries to get the last value that matches the given predicate
+		///	and returns it.
+		/// </summary>
+		/// <typeparam name="TPredicate">the predicate type (lambda)</typeparam>
+		/// <param name="fallback_value">the value to return if the predicate never gets satisfied</param>
+		/// <param name="predicate">the predicate to check against each value of the underlying range</param>
+		template<typename TPredicate, typename = std::enable_if_t<is_predicate<TPredicate>>>
+		_NODISCARD value_type last_or(const value_type& fallback_value, const TPredicate& predicate) const
+		{
+			// make a copy since the underlying range shouldn't change
+			range_type copy = this->range;
+
+			// try to move forward in order to see if we have any value
+			// to process
+			if(!copy.move_next())
+			{
+				return fallback_value; // return the fallback value
+			}
+
+			// store the value somewhere. This can be done since we've already stepped forward
+			value_type result = copy.get_value();
+
+			// a boolean that stores whether we've already used the predicate on the
+			// 'result' variable or not
+			bool checked = false;
+
+			while(copy.move_next())
+			{
+				// get the current value we're operating on
+				const auto current_value = copy.get_value();
+
+				// check the value using the predicate
+				if(predicate(current_value))
+				{
+					result = current_value; // update the value
+					checked = true; // mark the value as checked
+				}
+			}
+
+			// did we updated & checked the value?
+			if (checked)
+				// simply return the result
+				return result;
+			
+			// use the predicate
+			if(predicate(result))
+			{
+				// we're good to return the result since the predicate returned true
+				return result;
+			}
+			
+			// return the fallback value
+			return fallback_value;
+		}
+
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
 		_NODISCARD enumerable<orderby_range<range_type, TSelector>> orderby(const TSelector & selector) const
 		{
@@ -978,7 +1112,7 @@ namespace linq
 			}
 		}
 
-		template<range_concept TOtherRange, typename TPredicate, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TPredicate, value_type, value_type>, bool>>>
+		template<range_concept TOtherRange, typename TPredicate, typename = std::enable_if_t<std::is_same_v<std::invoke_result_t<TPredicate, value_type, typename enumerable<TOtherRange>::value_type>, bool>>>
 		_NODISCARD bool sequence_equal(const enumerable<TOtherRange> & enumerable, const TPredicate & predicate) const
 		{
 			range_type lhs = this->range;
