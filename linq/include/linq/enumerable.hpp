@@ -1039,6 +1039,11 @@ namespace linq
 			return fallback_value;
 		}
 
+		_NODISCARD value_type random() const
+		{
+			return shuffle().first();
+		}
+
 		template<typename TSelector, typename = std::enable_if_t<std::is_invocable_v<TSelector, value_type>>>
 		_NODISCARD enumerable<orderby_range<range_type, TSelector>> orderby(const TSelector & selector) const
 		{
